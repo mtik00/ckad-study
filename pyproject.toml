@@ -1,0 +1,15 @@
+[tool.poetry]
+name = "ckad-study"
+version = "0.1.0"
+description = ""
+authors = ["Tim McFadden <mtik00@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+awscli = "^1.32.29"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

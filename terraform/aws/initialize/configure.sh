@@ -6,6 +6,7 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 POSITIONAL_ARGS=()
 CREATE=0
 DELETE=0
+AWS=0
 
 # NOTE: These must match the TF backend config
 S3_BUCKET=${TF_STATE_BUCKET:-acg-mtik00-bucket-02}
@@ -19,8 +20,9 @@ Usage:
 
     Arguments:
         -c|--create  : Create the bucket and table (if needed)
-        -d|--delete  : Delete the bucket and table (if needed
-        -h|--help       : Show this message
+        -d|--delete  : Delete the bucket and table (if needed)
+        -a|--aws     : Write the access key to aws credentials
+        -h|--help    : Show this message
 EOF
 )
 
@@ -33,6 +35,10 @@ function usage() {
 function argparse() {
     while [[ $# -gt 0 ]]; do
     case $1 in
+        -a|--aws)
+            AWS=1
+            shift
+            ;;
         -c|--create)
             CREATE=1
             shift
@@ -56,6 +62,11 @@ function argparse() {
     done
 }
 
+
+function configure_aws() {
+    local f="${SCRIPT_DIR}/aws-configure.py"
+    /usr/bin/env python "${f}"
+}
 
 function create() {
     if [[ ! `aws --profile ${PROFILE} s3 ls | grep ${S3_BUCKET}` ]]; then
@@ -97,7 +108,7 @@ function delete() {
 function validate_args() {
     local error=0
 
-    if [[ "${CREATE}${DELETE}" == "00" ]] || [[ "${CREATE}${DELETE}" == "11" ]]; then
+    if [[ "${CREATE}${DELETE}${AWS}" == "000" ]] || [[ "${CREATE}${DELETE}" == "11" ]]; then
         echo "Must select either --create or --delete"
         error=1
     fi
@@ -113,13 +124,14 @@ function main() {
     argparse "$@"
     validate_args
 
+    if [[ $AWS -eq 1 ]]; then
+        configure_aws
+    fi
+
     if [[ $CREATE -eq 1 ]]; then
         create
     elif [[ $DELETE -eq 1 ]]; then
         delete
-    else
-        usage
-        exit 1
     fi
 }
 

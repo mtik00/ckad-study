@@ -18,6 +18,6 @@ variable "num_k8s_controls" {
 
 variable "num_k8s_workers" {
   type        = number
-  default     = 3
+  default     = 1
   description = "Number of worker nodes to create"
 }

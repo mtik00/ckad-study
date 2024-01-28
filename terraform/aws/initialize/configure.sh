@@ -70,8 +70,8 @@ function configure_aws() {
 
 function tfmain_bucket() {
     # Check the TF file to make sure the bucket matches
-    tfmain="${SCRIPT_DIR}/../main.tf"
-    if [[ ! `grep -E 'bucket[[:space:]]+=[[:space:]]"'${S3_BUCKET}'"' ../main.tf` ]]; then
+    tfmain=`readlink -f "${SCRIPT_DIR}/../main.tf"`
+    if [[ ! `grep -E 'bucket[[:space:]]+=[[:space:]]"'${S3_BUCKET}'"' "${tfmain}"` ]]; then
         echo "WARNING: Terraform backend config is not using the appropriate bucket!"
         echo "...change ${tfmain} to use: ${S3_BUCKET}"
     fi
@@ -116,6 +116,23 @@ function delete() {
     fi
 }
 
+function envskel() {
+    local secrets_dir=`readlink -f "${SCRIPT_DIR}/../../../.secrets"`
+    local envfile="${secrets_dir}/env.sh"
+
+    local OK=1
+
+    if [[ ! -f "${envfile}" ]]; then
+        mkdir -p "${secrets_dir}"
+        chmod 700 "${secrets_dir}"
+        cp "${SCRIPT_DIR}/env.sh.skel" "${secrets_dir}/env.sh"
+        chmod 600 "${secrets_dir}/env.sh"
+
+        echo "You must configure ${secrets_dir}/env.sh before moving on."
+        exit 1
+    fi
+}
+
 function validate_args() {
     local error=0
 
@@ -135,6 +152,7 @@ function main() {
     argparse "$@"
     validate_args
 
+    envskel
     tfmain_bucket
 
     if [[ $AWS -eq 1 ]]; then

@@ -1,5 +1,7 @@
 # CKA/D Study Environment with A Cloud Guru
 
+This repo consists of various tools and utilities I'm using to install a Kubernetes environment into AWS infrastructure in order to study for CKA/CKAD.  The base cloud environment is provided by A Cloud Guru's "playgrounds" feature.
+
 ## ACG Cloud Playground
 
 1.  Start a Playground

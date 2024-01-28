@@ -7,7 +7,7 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "acg-mtik00-bucket-02"
+    bucket         = "acg-mtik00-bucket"
     key            = "state/terraform.tfstate"
     region         = "us-east-1"
     encrypt        = true

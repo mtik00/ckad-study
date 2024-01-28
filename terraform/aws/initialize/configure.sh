@@ -9,7 +9,7 @@ DELETE=0
 AWS=0
 
 # NOTE: These must match the TF backend config
-S3_BUCKET=${TF_STATE_BUCKET:-acg-mtik00-bucket-02}
+S3_BUCKET=${TF_STATE_BUCKET:-acg-mtik00-bucket}
 DYNAMODB_TABLE=${TF_STATE_TABLE:-act-mtik00-tf-state}
 
 PROFILE=${AWS_PROFILE:-cloudguru}
@@ -68,10 +68,21 @@ function configure_aws() {
     /usr/bin/env python "${f}"
 }
 
+function tfmain_bucket() {
+    # Check the TF file to make sure the bucket matches
+    tfmain="${SCRIPT_DIR}/../main.tf"
+    if [[ ! `grep -E 'bucket[[:space:]]+=[[:space:]]"'${S3_BUCKET}'"' ../main.tf` ]]; then
+        echo "WARNING: Terraform backend config is not using the appropriate bucket!"
+        echo "...change ${tfmain} to use: ${S3_BUCKET}"
+    fi
+}
+
 function create() {
     if [[ ! `aws --profile ${PROFILE} s3 ls | grep ${S3_BUCKET}` ]]; then
         echo "creating bucket"
         \aws --profile ${PROFILE} s3api create-bucket --bucket ${S3_BUCKET} --region ${AWS_DEFAULT_REGION}
+    else
+        echo "S3 bucket (${S3_BUCKET}) already created"
     fi
 
     if [[ ! `aws --profile ${PROFILE} dynamodb list-tables | grep ${DYNAMODB_TABLE}` ]]; then
@@ -83,25 +94,25 @@ function create() {
             --provisioned-throughput ReadCapacityUnits=5,WriteCapacityUnits=5 \
             --region ${AWS_DEFAULT_REGION}
     else
-        echo "DynamoDB table already created"
+        echo "DynamoDB table (${DYNAMODB_TABLE}) already created"
     fi
 }
 
 function delete() {
     if [[ `\aws --profile ${PROFILE} s3 ls | grep ${S3_BUCKET}` ]]; then
-        echo "deleting bucket"
+        echo "deleting bucket ${S3_BUCKET}"
         \aws --profile ${PROFILE} s3api delete-bucket --bucket ${S3_BUCKET} --region ${AWS_DEFAULT_REGION}
     else
-        echo "bucket not found"
+        echo "bucket ${S3_BUCKET} not found"
     fi
 
     if [[ `\aws --profile ${PROFILE} dynamodb list-tables | grep ${DYNAMODB_TABLE}` ]]; then
-        echo "deleting table"
+        echo "deleting table ${DYNAMODB_TABLE}"
         \aws --profile ${PROFILE} dynamodb delete-table \
             --table-name ${DYNAMODB_TABLE} \
             --region ${AWS_DEFAULT_REGION}
     else
-        echo "DynamoDB table not found"
+        echo "DynamoDB table ${DYNAMODB_TABLE} not found"
     fi
 }
 
@@ -113,7 +124,7 @@ function validate_args() {
         error=1
     fi
 
-    if [[ $error -gt 0 ]]; then
+    if [[ $error -ne 0 ]]; then
         usage
         exit 1
     fi
@@ -123,6 +134,8 @@ function validate_args() {
 function main() {
     argparse "$@"
     validate_args
+
+    tfmain_bucket
 
     if [[ $AWS -eq 1 ]]; then
         configure_aws

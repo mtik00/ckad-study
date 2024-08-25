@@ -7,6 +7,12 @@ Install the dependencies with [devbox](https://www.jetify.com/devbox/docs/instal
 ```shell
 devbox install
 ```
+
+Run the devbox shell before continuing.
+
+```shell
+devbox shell
+```
 ## k3d
 
 Create the cluster with:
